@@ -21,14 +21,14 @@ const ChatRoom = () => {
     }
 
     // Initialize socket connection with auth token
-    socketRef.current = io('http://localhost:5000', {
+    socketRef.current = io('https://studyspark-ncsp.onrender.com', {
       auth: { token }
     });
 
     // Get current user info
     const fetchCurrentUser = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/user/profile', {
+        const response = await axios.get('https://studyspark-ncsp.onrender.com/api/user/profile', {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -45,7 +45,7 @@ const ChatRoom = () => {
     // Fetch existing messages
     const fetchMessages = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/studyrooms/${roomId}/messages`, {
+        const response = await axios.get(`https://studyspark-ncsp.onrender.com/api/studyrooms/${roomId}/messages`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -97,7 +97,7 @@ const ChatRoom = () => {
     
     try {
       await axios.post(
-        `http://localhost:5000/api/studyrooms/${roomId}/sendMessage`,
+        `https://studyspark-ncsp.onrender.com/api/studyrooms/${roomId}/sendMessage`,
         { text: newMessage },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }

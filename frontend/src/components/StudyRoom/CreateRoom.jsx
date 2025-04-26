@@ -21,7 +21,7 @@ const CreateRoom = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost:5000/api/studyrooms/create',
+        'https://studyspark-ncsp.onrender.com/api/studyrooms/create',
         { name: roomName, topic: topic },
         {
           headers: {

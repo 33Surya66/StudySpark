@@ -12,7 +12,7 @@ const Register = () => {
 
     const handleRegister = async () => {
         try {
-            await axios.post('http://localhost:5000/register', { username, password });
+            await axios.post('https://studyspark-ncsp.onrender.com/register', { username, password });
             setSuccessMessage("Registration successful! Redirecting to login..."); 
             
             // Redirect to home page after successful registration

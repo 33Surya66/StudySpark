@@ -10,7 +10,7 @@ const JoinRoom = () => {
     useEffect(() => {
         const fetchRooms = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/studyrooms/available', {
+                const response = await axios.get('https://studyspark-ncsp.onrender.com/api/studyrooms/available', {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                 });
                 setRooms(response.data || []); // Safely handle the response data
@@ -27,7 +27,7 @@ const JoinRoom = () => {
 
     const handleJoinRoom = async (roomId) => {
         try {
-            const response = await axios.post(`http://localhost:5000/api/studyrooms/${roomId}/join`, {}, {
+            const response = await axios.post(`https://studyspark-ncsp.onrender.com/api/studyrooms/${roomId}/join`, {}, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             alert('Successfully joined the room');

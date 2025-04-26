@@ -44,7 +44,7 @@ const Quiz = () => {
                 });
             }, 1000);
 
-            const response = await fetch('http://localhost:5000/api/generate-quiz', {
+            const response = await fetch('https://studyspark-ncsp.onrender.com/api/generate-quiz', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',

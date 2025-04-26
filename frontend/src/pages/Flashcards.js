@@ -48,7 +48,7 @@ const Flashcards = () => {
         }, 500);
 
         try {
-            const response = await fetch('http://localhost:5000/api/generate-flashcard', {
+            const response = await fetch('https://studyspark-ncsp.onrender.com/api/generate-flashcard', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
