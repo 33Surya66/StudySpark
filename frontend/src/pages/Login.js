@@ -12,6 +12,11 @@ const Login = ({ setIsAuthenticated }) => {
     const navigate = useNavigate();
 
     const handleLogin = async () => {
+        if (!username || !password) {
+            setError('Username/email and password are required');
+            return;
+        }
+
         setLoading(true); 
         setError(''); 
 
@@ -27,7 +32,8 @@ const Login = ({ setIsAuthenticated }) => {
                 navigate('/'); // Redirect to home page after login
             }, 1000); 
         } catch (error) {
-            setError('Login failed, please check your credentials'); 
+            const errorMessage = error.response?.data?.error || 'Login failed, please check your credentials';
+            setError(errorMessage); 
         } finally {
             setLoading(false); 
         }
@@ -39,7 +45,7 @@ const Login = ({ setIsAuthenticated }) => {
                 <h2>Login</h2>
                 <input
                     type="text"
-                    placeholder="Username"
+                    placeholder="Username or Email"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                 />
