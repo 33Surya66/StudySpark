@@ -18,7 +18,7 @@ const server = http.createServer(app);
 
 // Updated CORS configuration for Express
 app.use(cors({
-  origin: '*', // Allow all origins
+  origin: ['https://studysparkflash.vercel.app', 'http://localhost:3000', 'http://localhost:3001'], // Specific origins
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
@@ -28,7 +28,7 @@ app.use(cors({
 // Updated Socket.IO server with more detailed CORS configuration
 const io = new Server(server, {
   cors: {
-    origin: '*', // Allow all origins
+    origin: ['https://studysparkflash.vercel.app', 'http://localhost:3000', 'http://localhost:3001'], // Specific origins
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
@@ -207,35 +207,88 @@ app.post('/api/generate-quiz', async (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    const { username, password } = req.body;
+    const { username, email, password } = req.body;
+    
+    // Debug logging
+    console.log('Registration attempt:', { username, email: email ? 'provided' : 'missing', password: password ? 'provided' : 'missing' });
+    
+    // Validate required fields
+    if (!username || !email || !password) {
+        return res.status(400).json({ 
+            error: "All fields are required",
+            details: {
+                username: !username ? "Username is required" : null,
+                email: !email ? "Email is required" : null,
+                password: !password ? "Password is required" : null
+            }
+        });
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Please provide a valid email address" });
+    }
+
     try {
-        // Check if user already exists
-        const existingUser = await User.findOne({ username });
+        // Check if user already exists by username or email
+        const existingUser = await User.findOne({ 
+            $or: [{ username }, { email }] 
+        });
+        
         if (existingUser) {
-            return res.status(400).json({ error: "Username already exists" });
+            if (existingUser.username === username) {
+                return res.status(400).json({ error: "Username already exists" });
+            }
+            if (existingUser.email === email) {
+                return res.status(400).json({ error: "Email already exists" });
+            }
         }
         
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ username, password: hashedPassword });
+        const user = new User({ 
+            username, 
+            email, 
+            password: hashedPassword 
+        });
         await user.save();
+        console.log('User registered successfully:', username);
         res.status(201).json({ message: "User registered successfully" });
     } catch (error) {
         console.error("Registration error:", error);
-        res.status(400).json({ error: "Error registering user" });
+        res.status(400).json({ error: "Error registering user", details: error.message });
     }
 });
 
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
+    
+    if (!username || !password) {
+        return res.status(400).json({ 
+            error: "Username/email and password are required" 
+        });
+    }
+
     try {
-        const user = await User.findOne({ username });
+        // Allow login with either username or email
+        const user = await User.findOne({ 
+            $or: [{ username }, { email: username }] 
+        });
+        
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(401).json({ error: "Invalid credentials" });
         }
+        
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.json({ token, userId: user._id, username: user.username });
+        res.json({ 
+            token, 
+            userId: user._id, 
+            username: user.username,
+            email: user.email 
+        });
     } catch (error) {
-        res.status(500).json({ error: "Login failed" });
+        console.error("Login error:", error);
+        res.status(500).json({ error: "Login failed", details: error.message });
     }
 });
 
