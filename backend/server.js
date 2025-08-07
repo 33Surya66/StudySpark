@@ -36,6 +36,7 @@ const io = new Server(server, {
 });
 
 const studyRoomRoutes = require('./routes/studyRoomRoutes')(io);
+const analyticsRoutes = require('./routes/analyticsRoutes');
 
 app.use(express.json());
 
@@ -271,6 +272,7 @@ app.get('/api/user/profile', authenticate, async (req, res) => {
 studyRoomSocket(io);
 
 app.use('/api/studyrooms', studyRoomRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Add an OPTIONS handler for preflight requests
 app.options('*', cors());
