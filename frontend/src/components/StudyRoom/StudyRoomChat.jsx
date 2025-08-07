@@ -3,7 +3,9 @@ import { useParams } from 'react-router-dom';
 import socketIOClient from 'socket.io-client';
 import './StudyRoomChat.css';  
 
-const socket = socketIOClient('https://studyspark-ncsp.onrender.com');
+import { getSocketUrl } from '../../config/api';
+
+const socket = socketIOClient(getSocketUrl());
 
 const StudyRoomChat = () => {
   const { roomId } = useParams();

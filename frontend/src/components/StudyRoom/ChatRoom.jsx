@@ -20,8 +20,10 @@ const ChatRoom = () => {
       return;
     }
 
+import { getSocketUrl } from '../../config/api';
+
     // Initialize socket connection with auth token
-    socketRef.current = io('https://studyspark-ncsp.onrender.com', {
+    socketRef.current = io(getSocketUrl(), {
       auth: { token }
     });
 
