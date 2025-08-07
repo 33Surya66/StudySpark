@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import axios from 'axios';
+import { getSocketUrl } from '../../config/api';
 import './ChatRoom.css';
 
 const ChatRoom = () => {
@@ -19,8 +20,6 @@ const ChatRoom = () => {
       navigate('/login');
       return;
     }
-
-import { getSocketUrl } from '../../config/api';
 
     // Initialize socket connection with auth token
     socketRef.current = io(getSocketUrl(), {
