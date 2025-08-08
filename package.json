@@ -1,4 +1,19 @@
 {
+  "name": "studyspark",
+  "version": "1.0.0",
+  "description": "StudySpark - Collaborative Learning Platform with DBMS, Data Warehousing, and Indexing",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "test": "node test_login.js",
+    "test:dbms": "node test_dbms_concepts.js",
+    "test:indexing": "node test_indexing_performance.js",
+    "install-all": "npm install && cd frontend && npm install"
+  },
+  "keywords": ["education", "collaboration", "dbms", "data-warehousing", "indexing"],
+  "author": "StudySpark Team",
+  "license": "MIT",
   "dependencies": {
     "@craco/craco": "^7.1.0",
     "@google/generative-ai": "^0.21.0",
@@ -10,5 +25,11 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.1",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
