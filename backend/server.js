@@ -50,6 +50,142 @@ if (!process.env.GEMINI_API_KEY) {
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
+// Helper function for system performance metrics
+async function getSystemPerformanceMetrics() {
+    const startTime = Date.now();
+    
+    try {
+        // Test database performance
+        await User.findOne().limit(1); // Fast index lookup test
+        const dbResponseTime = Date.now() - startTime;
+        
+        return {
+            databaseResponseTime: dbResponseTime,
+            serverUptime: process.uptime(),
+            memoryUsage: process.memoryUsage(),
+            nodeVersion: process.version,
+            timestamp: new Date().toISOString()
+        };
+    } catch (error) {
+        return {
+            databaseResponseTime: -1,
+            error: 'Performance monitoring failed',
+            timestamp: new Date().toISOString()
+        };
+    }
+}
+
+// Helper function for learning effectiveness calculation
+async function calculateLearningEffectiveness() {
+    try {
+        const [quizStats, studyTimeStats] = await Promise.all([
+            User.aggregate([
+                {
+                    $group: {
+                        _id: null,
+                        totalQuizzes: { $sum: '$analytics.quizzesTaken' },
+                        averageQuizzes: { $avg: '$analytics.quizzesTaken' },
+                        activeUsers: { $sum: { $cond: [{ $gt: ['$analytics.quizzesTaken', 0] }, 1, 0] } }
+                    }
+                }
+            ]),
+            User.aggregate([
+                {
+                    $group: {
+                        _id: null,
+                        totalStudyTime: { $sum: '$analytics.totalStudyTime' },
+                        averageStudyTime: { $avg: '$analytics.totalStudyTime' },
+                        activeStudents: { $sum: { $cond: [{ $gt: ['$analytics.totalStudyTime', 0] }, 1, 0] } }
+                    }
+                }
+            ])
+        ]);
+        
+        return {
+            quizEngagement: quizStats[0] || { totalQuizzes: 0, averageQuizzes: 0, activeUsers: 0 },
+            studyTimeMetrics: studyTimeStats[0] || { totalStudyTime: 0, averageStudyTime: 0, activeStudents: 0 },
+            calculatedAt: new Date().toISOString()
+        };
+    } catch (error) {
+        return {
+            error: 'Failed to calculate learning effectiveness',
+            calculatedAt: new Date().toISOString()
+        };
+    }
+}
+
+// Helper function for index performance testing
+async function runIndexPerformanceTests() {
+    const tests = [];
+    
+    try {
+        // Test 1: Username lookup performance (uses index)
+        let startTime = Date.now();
+        await User.findOne({ username: 'testuser123' });
+        tests.push({
+            test: 'Username Lookup (Indexed)',
+            responseTime: Date.now() - startTime,
+            indexUsed: 'username_1'
+        });
+        
+        // Test 2: Email lookup performance (uses index)
+        startTime = Date.now();
+        await User.findOne({ email: 'test@example.com' });
+        tests.push({
+            test: 'Email Lookup (Indexed)',
+            responseTime: Date.now() - startTime,
+            indexUsed: 'email_1'
+        });
+        
+        // Test 3: Role-based query (uses compound index)
+        startTime = Date.now();
+        await User.find({ role: 'student', isActive: true }).limit(5);
+        tests.push({
+            test: 'Role + Active Query (Compound Index)',
+            responseTime: Date.now() - startTime,
+            indexUsed: 'role_active_index'
+        });
+        
+        // Test 4: Analytics sorting (uses analytics index)
+        startTime = Date.now();
+        await User.find({ isActive: true })
+            .sort({ 'analytics.totalStudyTime': -1 })
+            .limit(10);
+        tests.push({
+            test: 'Analytics Sorting (Indexed)',
+            responseTime: Date.now() - startTime,
+            indexUsed: 'user_activity_index'
+        });
+        
+        return tests;
+    } catch (error) {
+        return [{ error: 'Performance tests failed', details: error.message }];
+    }
+}
+
+// Helper function for index recommendations
+function getIndexRecommendations() {
+    return [
+        {
+            collection: 'users',
+            currentIndexes: ['username', 'email', 'role', 'isActive'],
+            compoundIndexes: ['role + isActive', 'analytics.totalStudyTime + analytics.quizzesTaken'],
+            recommendation: 'All critical indexes are implemented for optimal performance'
+        },
+        {
+            collection: 'studyrooms',
+            currentIndexes: ['name', 'topic', 'createdBy'],
+            recommendation: 'Consider adding compound index on topic + status for faster filtering'
+        },
+        {
+            collection: 'analytics',
+            currentIndexes: ['date', 'period'],
+            compoundIndexes: ['date + period', 'userMetrics.activeUsers + date'],
+            recommendation: 'Time-based indexes optimized for data warehouse queries'
+        }
+    ];
+}
+
 function extractJsonFromResponse(str) {
     try {
         // Try to extract JSON array from the response
@@ -318,7 +454,255 @@ const authenticate = async (req, res, next) => {
 
 // Protected route example
 app.get('/api/user/profile', authenticate, async (req, res) => {
-    res.json({ user: { id: req.user._id, username: req.user.username } });
+    try {
+        const user = await User.findById(req.user._id)
+            .select('-password')
+            .populate('analytics');
+        
+        // Update user's last active timestamp (Data Warehouse update)
+        await User.findByIdAndUpdate(req.user._id, {
+            'analytics.lastActive': new Date()
+        });
+        
+        res.json({ 
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                profile: user.profile,
+                analytics: user.analytics
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch profile' });
+    }
+});
+
+// DBMS Performance Dashboard Endpoint
+app.get('/api/admin/dashboard', authenticate, async (req, res) => {
+    try {
+        // Check if user is admin
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+        
+        // Real-time DBMS analytics with indexing
+        const [
+            totalUsers,
+            activeUsers,
+            totalRooms,
+            activeRooms,
+            recentRegistrations,
+            topPerformers,
+            systemMetrics
+        ] = await Promise.all([
+            User.countDocuments({ isActive: true }), // Uses isActive index
+            User.countDocuments({ 
+                'analytics.lastActive': { 
+                    $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) 
+                },
+                isActive: true 
+            }), // Uses compound index
+            StudyRoom.countDocuments(),
+            StudyRoom.countDocuments({ status: 'active' }),
+            User.find({ isActive: true })
+                .sort({ createdAt: -1 }) // Uses timestamp index
+                .limit(5)
+                .select('username createdAt analytics'),
+            User.find({ isActive: true })
+                .sort({ 'analytics.totalStudyTime': -1 }) // Uses analytics index
+                .limit(10)
+                .select('username analytics profile'),
+            getSystemPerformanceMetrics()
+        ]);
+        
+        const dashboardData = {
+            overview: {
+                totalUsers,
+                activeUsers,
+                totalRooms,
+                activeRooms,
+                userRetentionRate: totalUsers > 0 ? (activeUsers / totalUsers * 100).toFixed(2) : 0
+            },
+            recentActivity: {
+                newRegistrations: recentRegistrations,
+                topPerformers: topPerformers
+            },
+            performance: systemMetrics,
+            timestamp: new Date().toISOString()
+        };
+        
+        res.json(dashboardData);
+    } catch (error) {
+        console.error('Dashboard error:', error);
+        res.status(500).json({ error: 'Failed to fetch dashboard data' });
+    }
+});
+
+// Real-time Analytics Endpoint (Data Warehousing)
+app.get('/api/analytics/realtime', authenticate, async (req, res) => {
+    try {
+        const { timeframe = '24h' } = req.query;
+        
+        let startDate = new Date();
+        if (timeframe === '7d') {
+            startDate.setDate(startDate.getDate() - 7);
+        } else if (timeframe === '30d') {
+            startDate.setDate(startDate.getDate() - 30);
+        } else {
+            startDate.setHours(startDate.getHours() - 24);
+        }
+        
+        // Advanced aggregation pipeline with indexing
+        const analyticsData = await User.aggregate([
+            {
+                $match: {
+                    'analytics.lastActive': { $gte: startDate },
+                    isActive: true
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        hour: { $hour: '$analytics.lastActive' },
+                        day: { $dayOfMonth: '$analytics.lastActive' }
+                    },
+                    activeUsers: { $sum: 1 },
+                    totalStudyTime: { $sum: '$analytics.totalStudyTime' },
+                    totalQuizzes: { $sum: '$analytics.quizzesTaken' },
+                    totalFlashcards: { $sum: '$analytics.flashcardsCreated' },
+                    averageSessionTime: { $avg: '$analytics.totalStudyTime' }
+                }
+            },
+            {
+                $sort: { '_id.day': 1, '_id.hour': 1 }
+            }
+        ]);
+        
+        // Learning effectiveness metrics
+        const learningMetrics = await calculateLearningEffectiveness();
+        
+        res.json({
+            timeframe,
+            trends: analyticsData,
+            learningEffectiveness: learningMetrics,
+            generatedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('Analytics error:', error);
+        res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+});
+
+// Performance Monitoring Endpoint (Indexing demonstration)
+app.get('/api/performance/indexes', authenticate, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+        
+        // Demonstrate index performance
+        const performanceTests = await runIndexPerformanceTests();
+        
+        res.json({
+            indexPerformance: performanceTests,
+            recommendations: getIndexRecommendations(),
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch performance data' });
+    }
+});
+
+// User Activity Tracking (CRUD + Analytics)
+app.post('/api/user/activity', authenticate, async (req, res) => {
+    try {
+        const { activityType, data } = req.body;
+        
+        // Update user analytics (Data Warehouse)
+        const updateQuery = {};
+        switch (activityType) {
+            case 'quiz_taken':
+                updateQuery['$inc'] = { 'analytics.quizzesTaken': 1 };
+                break;
+            case 'flashcard_created':
+                updateQuery['$inc'] = { 'analytics.flashcardsCreated': 1 };
+                break;
+            case 'study_session':
+                updateQuery['$inc'] = { 'analytics.totalStudyTime': data.duration || 0 };
+                break;
+            case 'room_joined':
+                updateQuery['$inc'] = { 'analytics.studyRoomsJoined': 1 };
+                break;
+        }
+        
+        updateQuery['$set'] = { 'analytics.lastActive': new Date() };
+        
+        // Fast update using user ID index
+        await User.findByIdAndUpdate(req.user.userId, updateQuery);
+        
+        res.json({ 
+            message: 'Activity tracked successfully',
+            activityType,
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to track activity' });
+    }
+});
+
+// Advanced Search with Indexing
+app.get('/api/search', authenticate, async (req, res) => {
+    try {
+        const { query, type = 'all', limit = 10 } = req.query;
+        
+        if (!query) {
+            return res.status(400).json({ error: 'Search query required' });
+        }
+        
+        const searchResults = {};
+        
+        if (type === 'all' || type === 'users') {
+            // Fast user search using text indexes
+            searchResults.users = await User.find({
+                $or: [
+                    { username: { $regex: query, $options: 'i' } },
+                    { 'profile.firstName': { $regex: query, $options: 'i' } },
+                    { 'profile.lastName': { $regex: query, $options: 'i' } }
+                ],
+                isActive: true
+            })
+            .limit(parseInt(limit))
+            .select('username profile.firstName profile.lastName analytics.totalStudyTime');
+        }
+        
+        if (type === 'all' || type === 'rooms') {
+            searchResults.rooms = await StudyRoom.find({
+                $or: [
+                    { name: { $regex: query, $options: 'i' } },
+                    { topic: { $regex: query, $options: 'i' } }
+                ],
+                status: 'active'
+            })
+            .limit(parseInt(limit))
+            .populate('createdBy', 'username')
+            .select('name topic participants createdAt');
+        }
+        
+        res.json({
+            query,
+            results: searchResults,
+            searchTime: Date.now(),
+            resultCount: Object.values(searchResults).reduce((acc, arr) => acc + (arr?.length || 0), 0)
+        });
+        
+    } catch (error) {
+        res.status(500).json({ error: 'Search failed' });
+    }
 });
 
 studyRoomSocket(io);

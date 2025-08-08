@@ -23,13 +23,21 @@ const Login = ({ setIsAuthenticated }) => {
         try {
             const response = await axios.post('https://studyspark-ncsp.onrender.com/login', { username, password });
             localStorage.setItem('token', response.data.token);
+            localStorage.setItem('username', response.data.username);
+            localStorage.setItem('userRole', response.data.role || 'student');
             setSuccess(true);
             
             // Update authentication state in the parent component
-            setIsAuthenticated(true);
+            setIsAuthenticated(response.data.role || 'student');
 
+            // Redirect based on role
             setTimeout(() => {
-                navigate('/'); // Redirect to home page after login
+                const role = response.data.role || 'student';
+                if (role === 'admin') {
+                    navigate('/admin');
+                } else {
+                    navigate('/dashboard');
+                }
             }, 1000); 
         } catch (error) {
             const errorMessage = error.response?.data?.error || 'Login failed, please check your credentials';

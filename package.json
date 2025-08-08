@@ -9,6 +9,8 @@
     "test": "node test_login.js",
     "test:dbms": "node test_dbms_concepts.js",
     "test:indexing": "node test_indexing_performance.js",
+    "test:gaandaa-faad": "node test_gaandaa_faad_level.js",
+    "test:all-concepts": "node test_gaandaa_faad_level.js",
     "install-all": "npm install && cd frontend && npm install"
   },
   "keywords": ["education", "collaboration", "dbms", "data-warehousing", "indexing"],

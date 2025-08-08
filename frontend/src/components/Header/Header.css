@@ -17,18 +17,65 @@
     padding: 0.5rem 0.75rem;
     border-radius: 5px;
     transition: background-color 0.3s, color 0.3s;
+    font-weight: 500;
 }
-
 
 .nav a:hover {
     background-color: white; 
     color: black; 
 }
 
+.nav-highlight {
+    background: linear-gradient(45deg, #3498db, #2980b9) !important;
+    color: white !important;
+    font-weight: bold !important;
+    animation: pulse 2s infinite;
+}
 
-.auth-links {
+.nav-highlight:hover {
+    background: linear-gradient(45deg, #2980b9, #3498db) !important;
+    color: white !important;
+    transform: scale(1.05);
+}
+
+.admin-link {
+    background: linear-gradient(45deg, #e74c3c, #c0392b) !important;
+    color: white !important;
+    font-weight: bold !important;
+}
+
+.admin-link:hover {
+    background: linear-gradient(45deg, #c0392b, #e74c3c) !important;
+    color: white !important;
+    transform: scale(1.05);
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
+}
+
+
+.auth-buttons {
     display: flex;
     gap: 1rem;
+    align-items: center;
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.user-role {
+    background: linear-gradient(45deg, #f39c12, #e67e22);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
 }
 
 .login-link,
@@ -37,7 +84,10 @@
     text-decoration: none;
     padding: 0.4rem 0.9rem;
     border-radius: 5px;
-    transition: background-color 0.3s;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
 }
 
 .login-link:hover {
