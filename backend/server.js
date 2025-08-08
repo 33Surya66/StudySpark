@@ -343,10 +343,10 @@ app.post('/api/generate-quiz', async (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    const { username, email, password } = req.body;
+    const { username, email, password, role } = req.body;
     
     // Debug logging
-    console.log('Registration attempt:', { username, email: email ? 'provided' : 'missing', password: password ? 'provided' : 'missing' });
+    console.log('Registration attempt:', { username, email: email ? 'provided' : 'missing', password: password ? 'provided' : 'missing', role });
     
     // Validate required fields
     if (!username || !email || !password) {
@@ -382,14 +382,26 @@ app.post('/register', async (req, res) => {
         }
         
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ 
+        
+        // Create user with role support
+        const userData = { 
             username, 
             email, 
             password: hashedPassword 
-        });
+        };
+        
+        // Set role if provided and valid
+        if (role && ['student', 'teacher', 'admin'].includes(role)) {
+            userData.role = role;
+        }
+        
+        const user = new User(userData);
         await user.save();
-        console.log('User registered successfully:', username);
-        res.status(201).json({ message: "User registered successfully" });
+        console.log(`User registered successfully: ${username} as ${user.role}`);
+        res.status(201).json({ 
+            message: "User registered successfully",
+            role: user.role 
+        });
     } catch (error) {
         console.error("Registration error:", error);
         res.status(400).json({ error: "Error registering user", details: error.message });

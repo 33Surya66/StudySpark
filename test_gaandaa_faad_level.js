@@ -57,7 +57,8 @@ async function testDBMSOperations() {
                 const response = await axios.post(`${API_URL}/register`, {
                     username: user.username,
                     email: user.email,
-                    password: user.password
+                    password: user.password,
+                    role: user.role
                 });
                 
                 const responseTime = measureTime(startTime);
